@@ -65,13 +65,13 @@ public class kNearestNeighbour {
         double accuracy = 0.0;
 
         System.out.println("k value : " + k);
-        
+
         for(int i = 0; i < mTestSetArffReader.getDataInstanceList().size(); i++) {
             Distance[] distance = computeEuclideanDistance(testSetData.get(i), trainSetData);
-            //TODO - sort based on distance measure
+            //sort based on distance measure
             Arrays.sort(distance);
 
-            //TODO - Find k nearest neighbours' class
+            //Find k nearest neighbours' class
             int[] classCount = new int[mTrainSetArffReader.getARFFClass().mNoOfClasses];
             for(int j = 0; j < k; j++) {
                 for(int l = 0; l < mTrainSetArffReader.getARFFClass().mNoOfClasses; l++) {
@@ -82,7 +82,7 @@ public class kNearestNeighbour {
                 }
             }
 
-            //TODO - Classify based on majority class
+            //Classify based on majority class
             int majorityClassIndex = -1;
             int max = -1;
 
@@ -124,6 +124,44 @@ public class kNearestNeighbour {
         return instanceList;
     }
 
+    public static void predictTestSet(ArrayList<ArrayList<ARFFContinuousInstance>> trainSetData,
+                                      ArrayList<ArrayList<ARFFContinuousInstance>> testSetData) {
+        double meanAbsoluteError = 0.0;
+
+        System.out.println("k value : " + k);
+
+        // For each instance in test set, compute the euclidean distance to all instances in the train set
+        // Sort the instances by distance
+        // Find k nearest neighbors
+        // Return the average class values of the k nearest neighbours
+
+        for(int i = 0; i < mTestSetArffReader.getDataInstanceList().size(); i++) {
+            Distance[] distance = computeEuclideanDistance(testSetData.get(i), trainSetData);
+            //sort based on distance measure
+            Arrays.sort(distance);
+
+            double predictedValue = 0.0;
+            double actualValue = 0.0;
+
+            for(int l = 0; l < k; l++) {
+                predictedValue += Double.parseDouble(distance[l].getInstanceClass());
+            }
+
+            predictedValue = predictedValue / (double) k;
+            actualValue = Double.parseDouble(mTestSetArffReader.getDataInstanceList()
+                    .get(i)[mTestSetArffReader.getDataInstanceList().get(i).length - 1]);
+            meanAbsoluteError += Math.abs(predictedValue - actualValue);
+
+            System.out.println("Predicted value : " + String.format("%f", predictedValue)
+                    + "\tActual value : " + String.format("%f",actualValue));
+        }
+
+        meanAbsoluteError = meanAbsoluteError/ (double) mTestSetArffReader.getDataInstanceList().size();
+        System.out.println("Mean absolute error : " + meanAbsoluteError);
+        System.out.println("Total number of instances : " + mTestSetArffReader.getDataInstanceList().size());
+
+    }
+
     public static void main(String[] args) {
         if (args.length != 3) {
             System.out.println("Program usage: knn <training_set> <test_set> <k>");
@@ -137,7 +175,12 @@ public class kNearestNeighbour {
 
         ArrayList<ArrayList<ARFFContinuousInstance>> trainSetData = constructInstanceData(mTrainSetArffReader);
         ArrayList<ArrayList<ARFFContinuousInstance>> testSetData = constructInstanceData(mTestSetArffReader);
-        classifyTestSet(trainSetData, testSetData);
+
+        if(mTrainSetArffReader.getARFFClass().mIsClassNumeric) {
+            predictTestSet(trainSetData, testSetData);
+        } else {
+            classifyTestSet(trainSetData, testSetData);
+        }
 
     }
 

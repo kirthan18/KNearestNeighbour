@@ -8,10 +8,16 @@ public class ARFFClass {
 
     public String[] mClassLabels;
 
-    public ARFFClass(String[] classLabels) {
+    public boolean mIsClassNumeric;
+
+    public ARFFClass(String[] classLabels, boolean isClassNumeric) {
+        this.mIsClassNumeric = isClassNumeric;
         if (classLabels != null) {
             this.mNoOfClasses = classLabels.length;
             this.mClassLabels = classLabels;
+        } else {
+            this.mClassLabels = null;
+            this.mNoOfClasses = -1;
         }
     }
 }

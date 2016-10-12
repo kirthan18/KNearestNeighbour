@@ -109,14 +109,24 @@ public class ARFFReader {
      * @param data Instance variable containing data
      */
     public void setARFFClass(Instances data) {
+        boolean isClassLabelNumeric = false;
+
         if (data.classIndex() == -1) {
             data.setClassIndex(data.numAttributes() - 1);
-            String classLabels[] = new String[data.attribute(data.numAttributes() - 1).numValues()];
-            for (int j = 0; j < data.attribute(data.numAttributes() - 1).numValues(); j++) {
-                classLabels[j] = data.attribute(data.numAttributes() - 1).value(j);
-                //System.out.println("Added class label " + classLabels[j] + " to ID3 class ");
+            if(data.attribute(data.numAttributes()-1).isNumeric()) {
+                isClassLabelNumeric = true;
             }
-            mClass = new ARFFClass(classLabels);
+            if(!isClassLabelNumeric) {
+                String classLabels[] = new String[data.attribute(data.numAttributes() - 1).numValues()];
+                for (int j = 0; j < data.attribute(data.numAttributes() - 1).numValues(); j++) {
+                    classLabels[j] = data.attribute(data.numAttributes() - 1).value(j);
+                    //System.out.println("Added class label " + classLabels[j] + " to ID3 class ");
+                }
+                mClass = new ARFFClass(classLabels, isClassLabelNumeric);
+            } else {
+                mClass = new ARFFClass(null, isClassLabelNumeric);
+            }
+
         }
     }
 
