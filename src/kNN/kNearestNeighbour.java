@@ -2,6 +2,7 @@ package kNN;
 
 import ARFFReader.ARFFReader;
 import data.ARFFContinuousInstance;
+import data.Distance;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,27 +36,20 @@ public class kNearestNeighbour {
         return arffReader;
     }
 
-    private static class Distance {
-        private double mDistance;
-        private int mInstanceOrdinal;
-
-        public Distance(double distanceValue, int attributeOrdinal){
-            this.mDistance = distanceValue;
-            this.mInstanceOrdinal = attributeOrdinal;
-        }
-    }
-
     private static Distance[] computeEuclideanDistance(ArrayList<ARFFContinuousInstance> instance,
-                                                 ArrayList<ArrayList<ARFFContinuousInstance>> trainSetData) {
+                                                       ArrayList<ArrayList<ARFFContinuousInstance>> trainSetData) {
         Distance[] distance = new Distance[trainSetData.size()];
-        double sumOfSquares = 0.0;
 
         for(int i = 0; i < trainSetData.size(); i++) {
+            double sumOfSquares = 0.0;
             ArrayList<ARFFContinuousInstance> trainInstance = trainSetData.get(i);
             for (int j = 0; j < instance.size(); j++) {
                 sumOfSquares += Math.pow((instance.get(j).mInstanceValue - trainInstance.get(j).mInstanceValue),2);
             }
-            distance[i] = new Distance(Math.sqrt(sumOfSquares), i);
+            distance[i] = new Distance(Math.sqrt(sumOfSquares), i,
+                    mTrainSetArffReader
+                            .getDataInstanceList()
+                            .get(i)[mTrainSetArffReader.getDataInstanceList().get(i).length-1]);
         }
         return distance;
     }
@@ -67,24 +61,62 @@ public class kNearestNeighbour {
         // Compute the majority class among the k nearest neighbours
         // Print it
 
+        int numCorrectlyClassified = 0;
+        double accuracy = 0.0;
+
+        System.out.println("k value : " + k);
+        
         for(int i = 0; i < mTestSetArffReader.getDataInstanceList().size(); i++) {
             Distance[] distance = computeEuclideanDistance(testSetData.get(i), trainSetData);
             //TODO - sort based on distance measure
             Arrays.sort(distance);
-            //TODO - Find k nearest neighbours
+
+            //TODO - Find k nearest neighbours' class
+            int[] classCount = new int[mTrainSetArffReader.getARFFClass().mNoOfClasses];
+            for(int j = 0; j < k; j++) {
+                for(int l = 0; l < mTrainSetArffReader.getARFFClass().mNoOfClasses; l++) {
+                    if (distance[j].getInstanceClass()
+                            .equalsIgnoreCase(mTrainSetArffReader.getARFFClass().mClassLabels[l])) {
+                        classCount[l]++;
+                    }
+                }
+            }
+
             //TODO - Classify based on majority class
+            int majorityClassIndex = -1;
+            int max = -1;
+
+            for(int l = 0; l < classCount.length; l++) {
+                if(classCount[l] > max) {
+                    max = classCount[l];
+                    majorityClassIndex = l;
+                }
+            }
+
+            String predictedClass = mTrainSetArffReader.getARFFClass().mClassLabels[majorityClassIndex];
+            String actualClass = mTrainSetArffReader.getDataInstanceList()
+                    .get(i)[mTestSetArffReader.getDataInstanceList().get(i).length - 1];
+
+            if(predictedClass == actualClass) {
+                numCorrectlyClassified++;
+            }
+            System.out.println("Predicted class : " + predictedClass + "\tActual class : " + actualClass);
         }
+        accuracy = (double) numCorrectlyClassified / (double) mTestSetArffReader.getDataInstanceList().size();
+        System.out.println("Number of correctly classified instances : " + numCorrectlyClassified);
+        System.out.println("Total number of instances : " + mTestSetArffReader.getDataInstanceList().size());
+        System.out.println("Accuracy : " + accuracy);
     }
 
     private static ArrayList<ArrayList<ARFFContinuousInstance>> constructInstanceData(ARFFReader reader) {
         ArrayList<ArrayList<ARFFContinuousInstance>> instanceList = new ArrayList<>();
-        ArrayList<ARFFContinuousInstance> instanceAttributeList = new ArrayList<>();
+
         for(int i = 0; i < reader.getDataInstanceList().size(); i++) {
+            ArrayList<ARFFContinuousInstance> instanceAttributeList = new ArrayList<>();
             String[] instance = reader.getDataInstanceList().get(i);
             for(int j = 0; j < reader.getAttributeList().size(); j++) {
                 ARFFContinuousInstance continuousInstance = new ARFFContinuousInstance(i,
-                        Double.parseDouble(instance[j]),
-                        instance[instance.length - 1]);
+                        Double.parseDouble(instance[j]));
                 instanceAttributeList.add(continuousInstance);
             }
             instanceList.add(instanceAttributeList);

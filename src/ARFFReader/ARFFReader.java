@@ -27,12 +27,12 @@ public class ARFFReader {
     /**
      * ID3Class instance for the parsed file
      */
-    private ARFFClass mId3Class = null;
+    private ARFFClass mClass = null;
 
     /**
      * List of attributes in the parsed ARFF File
      */
-    private ArrayList<ARFFAttribute> mID3AttributeList = null;
+    private ArrayList<ARFFAttribute> mAttributeList = null;
 
     /**
      * Gets an instance of ARFFReader class
@@ -49,24 +49,24 @@ public class ARFFReader {
         }*/
         arffReader.mFileName = fileName;
         arffReader.mDataInstanceList = null;
-        arffReader.mId3Class = null;
-        arffReader.mID3AttributeList = null;
+        arffReader.mClass = null;
+        arffReader.mAttributeList = null;
         return arffReader;
     }
 
     /**
-     * Given data of Instances format, parses them and stores in ID3Attribute format
+     * Given data of Instances format, parses them and stores in ARFFAttribute format
      *
      * @param data Instance variable containing data
      */
-    public void setID3Attributes(Instances data) {
+    public void setARFFAttributes(Instances data) {
         int attributeOrdinal = -1;
         String attributeName = "";
         String[] attributeValues = {};
         int attributeType = -1;
 
-        if (mID3AttributeList == null) {
-            mID3AttributeList = new ArrayList<ARFFAttribute>();
+        if (mAttributeList == null) {
+            mAttributeList = new ArrayList<ARFFAttribute>();
         }
         if (data.classIndex() == -1) {
             for (int i = 0; i < data.numAttributes() - 1; i++) {
@@ -83,7 +83,7 @@ public class ARFFReader {
                     }
                 }
                 ARFFAttribute arffAttribute = new ARFFAttribute(attributeOrdinal, attributeName, attributeType, attributeValues);
-                mID3AttributeList.add(arffAttribute);
+                mAttributeList.add(arffAttribute);
                 //System.out.println("Added attribute " + id3Attribute.mAttributeName + " to attribute list!");
             }
         }
@@ -95,11 +95,11 @@ public class ARFFReader {
      * @return List of ID3Attributes
      */
     public ArrayList<ARFFAttribute> getAttributeList() {
-        if (mID3AttributeList == null) {
+        if (mAttributeList == null) {
             //System.out.println("Attribute list is null!");
             return null;
         } else {
-            return mID3AttributeList;
+            return mAttributeList;
         }
     }
 
@@ -108,7 +108,7 @@ public class ARFFReader {
      *
      * @param data Instance variable containing data
      */
-    public void setID3Class(Instances data) {
+    public void setARFFClass(Instances data) {
         if (data.classIndex() == -1) {
             data.setClassIndex(data.numAttributes() - 1);
             String classLabels[] = new String[data.attribute(data.numAttributes() - 1).numValues()];
@@ -116,7 +116,7 @@ public class ARFFReader {
                 classLabels[j] = data.attribute(data.numAttributes() - 1).value(j);
                 //System.out.println("Added class label " + classLabels[j] + " to ID3 class ");
             }
-            mId3Class = new ARFFClass(classLabels);
+            mClass = new ARFFClass(classLabels);
         }
     }
 
@@ -125,12 +125,12 @@ public class ARFFReader {
      *
      * @return ID3Class variable
      */
-    public ARFFClass getID3Class() {
-        if (mId3Class == null) {
+    public ARFFClass getARFFClass() {
+        if (mClass == null) {
             //System.out.println("Class label is null!");
             return null;
         } else {
-            return mId3Class;
+            return mClass;
         }
     }
 
@@ -197,11 +197,11 @@ public class ARFFReader {
      * @return Number of attributes
      */
     private int getNumberOfAttributes() {
-        if (mID3AttributeList == null) {
+        if (mAttributeList == null) {
             //System.out.println("Attribute list is null!");
             return -1;
         } else {
-            return mID3AttributeList.size();
+            return mAttributeList.size();
         }
     }
 
@@ -218,9 +218,9 @@ public class ARFFReader {
                 arffLoader.setFile(filedata);
                 Instances data = arffLoader.getDataSet();
                 //System.out.println("Data instance set successfully! No instances : " + data.numInstances());
-                setID3Attributes(data);
+                setARFFAttributes(data);
 
-                setID3Class(data);
+                setARFFClass(data);
 
                 setDataInstanceList(data);
 

@@ -8,12 +8,9 @@ public class ARFFContinuousInstance implements Comparable<ARFFContinuousInstance
 
     public double mInstanceValue = 0.0;
 
-    public String mInstanceLabel = "";
-
-    public ARFFContinuousInstance(int instanceOrdinal, double instanceValue, String classLabel) {
+    public ARFFContinuousInstance(int instanceOrdinal, double instanceValue) {
         this.mInstanceOrdinal = instanceOrdinal;
         this.mInstanceValue = instanceValue;
-        this.mInstanceLabel = classLabel;
     }
 
     @Override
