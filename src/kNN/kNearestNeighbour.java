@@ -1,3 +1,5 @@
+package kNN;
+
 import ARFFReader.ARFFReader;
 import data.ARFFContinuousInstance;
 
