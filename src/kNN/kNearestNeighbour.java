@@ -83,10 +83,20 @@ public class kNearestNeighbour {
             }
 
             //Classify based on majority class
+            String nearestNeighbourClass = distance[0].getInstanceClass();
             int majorityClassIndex = -1;
             int max = -1;
 
             for(int l = 0; l < classCount.length; l++) {
+                if(classCount[l] == max) {
+                    if(mTrainSetArffReader.getARFFClass().mClassLabels[l].equalsIgnoreCase(nearestNeighbourClass)) {
+                        max = classCount[l];
+                        majorityClassIndex = l;
+                    } else {
+                        //This class doesn't contain the nearest neighbour.
+                        //So proceed to find the other majority classes if they exist.
+                    }
+                }
                 if(classCount[l] > max) {
                     max = classCount[l];
                     majorityClassIndex = l;
