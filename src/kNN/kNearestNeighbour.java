@@ -12,7 +12,6 @@ import java.util.Arrays;
  */
 public class kNearestNeighbour {
 
-    private static ARFFReader mArffReader;
     private static int k = -1;
     /**
      * ARFFReader instance for training set
