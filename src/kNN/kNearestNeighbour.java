@@ -85,9 +85,11 @@ public class kNearestNeighbour {
             String nearestNeighbourClass = distance[0].getInstanceClass();
             int majorityClassIndex = -1;
             int max = -1;
+            boolean isTie = false;
 
             for(int l = 0; l < classCount.length; l++) {
                 if(classCount[l] == max) {
+                    isTie = true;
                     if(mTrainSetArffReader.getARFFClass().mClassLabels[l].equalsIgnoreCase(nearestNeighbourClass)) {
                         max = classCount[l];
                         majorityClassIndex = l;
@@ -97,13 +99,38 @@ public class kNearestNeighbour {
                     }
                 }
                 if(classCount[l] > max) {
+                    isTie = false;
                     max = classCount[l];
                     majorityClassIndex = l;
                 }
             }
 
-            String predictedClass = mTrainSetArffReader.getARFFClass().mClassLabels[majorityClassIndex];
-            String actualClass = mTrainSetArffReader.getDataInstanceList()
+            if (isTie) {
+                ArrayList<Integer> tieArray = new ArrayList<>();
+
+                for (int o = 0; o < distance.length - 1; o++) {
+                    if (distance[o].getDistance() == distance[o + 1].getDistance()) {
+                        tieArray.add(o, getClassIndex(distance[o].getInstanceClass()));
+                        tieArray.add(o + 1, getClassIndex(distance[o + 1].getInstanceClass()));
+                    } else {
+                        break;
+                    }
+                }
+
+
+                int finalClassIndex = 9999999;
+                for (int o = 0; o < tieArray.size(); o++) {
+                    if (tieArray.get(o) < finalClassIndex) {
+                        finalClassIndex = tieArray.get(o);
+                    }
+                }
+                if (finalClassIndex != 9999999) {
+                    majorityClassIndex = finalClassIndex;
+                }
+            }
+
+            String predictedClass = mTestSetArffReader.getARFFClass().mClassLabels[majorityClassIndex];
+            String actualClass = mTestSetArffReader.getDataInstanceList()
                     .get(i)[mTestSetArffReader.getDataInstanceList().get(i).length - 1];
 
             if(predictedClass == actualClass) {
@@ -115,6 +142,17 @@ public class kNearestNeighbour {
         System.out.println("Number of correctly classified instances : " + numCorrectlyClassified);
         System.out.println("Total number of instances : " + mTestSetArffReader.getDataInstanceList().size());
         System.out.println("Accuracy : " + accuracy);
+    }
+
+    private static int getClassIndex(String className) {
+        int index = -1;
+
+        for(int i = 0; i < mTrainSetArffReader.getARFFClass().mNoOfClasses; i++) {
+            if(className.equalsIgnoreCase(mTrainSetArffReader.getARFFClass().mClassLabels[i])) {
+                index = i;
+            }
+        }
+        return index;
     }
 
     private static ArrayList<ArrayList<ARFFContinuousInstance>> constructInstanceData(ARFFReader reader) {

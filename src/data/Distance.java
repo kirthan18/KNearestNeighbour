@@ -14,6 +14,10 @@ public class Distance implements Comparable<Distance>{
         this.mInstanceClass = instanceClass;
     }
 
+    public double getDistance() {
+        return mDistance;
+    }
+
     public int getInstanceOrdinal() {
         return mInstanceOrdinal;
     }
