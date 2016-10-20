@@ -6,6 +6,7 @@ import data.Distance;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * Created by kirthanaaraghuraman on 10/11/16.
@@ -65,10 +66,41 @@ public class kNearestNeighbour {
 
         System.out.println("k value : " + k);
 
-        for(int i = 0; i < mTestSetArffReader.getDataInstanceList().size(); i++) {
+        for(int i = 104; i < mTestSetArffReader.getDataInstanceList().size(); i++) {
             Distance[] distance = computeEuclideanDistance(testSetData.get(i), trainSetData);
             //sort based on distance measure
             Arrays.sort(distance);
+
+            int startIndex = 0;
+            int endIndex = 0;
+            int x = 1;
+            double prevDistance = distance[0].getDistance();
+
+            while(x < distance.length) {
+                if (distance[x].getDistance() == prevDistance) {
+                    endIndex = x;
+                    x++;
+                } else {
+                    if(startIndex < endIndex) {
+                        //System.out.println("i = " + i + " Start index : " + startIndex + " End index = " + endIndex);
+                        Arrays.sort(distance, startIndex, endIndex, (o1, o2) -> {
+                            if (o1.getInstanceOrdinal() < o2.getInstanceOrdinal()) {
+                                return -1;
+                            } else if (o1.getInstanceOrdinal() > o2.getInstanceOrdinal()) {
+                                return 1;
+                            } else {
+                                return 0;
+                            }
+                        });
+
+                    }
+                    endIndex = x;
+                    startIndex = x;
+                    prevDistance = distance[x].getDistance();
+                    x++;
+                }
+
+            }
 
             //Find k nearest neighbours' class
             int[] classCount = new int[mTrainSetArffReader.getARFFClass().mNoOfClasses];
@@ -82,50 +114,13 @@ public class kNearestNeighbour {
             }
 
             //Classify based on majority class
-            String nearestNeighbourClass = distance[0].getInstanceClass();
             int majorityClassIndex = -1;
             int max = -1;
-            boolean isTie = false;
 
             for(int l = 0; l < classCount.length; l++) {
-                if(classCount[l] == max) {
-                    isTie = true;
-                    if(mTrainSetArffReader.getARFFClass().mClassLabels[l].equalsIgnoreCase(nearestNeighbourClass)) {
-                        max = classCount[l];
-                        majorityClassIndex = l;
-                    } else {
-                        //This class doesn't contain the nearest neighbour.
-                        //So proceed to find the other majority classes if they exist.
-                    }
-                }
                 if(classCount[l] > max) {
-                    isTie = false;
                     max = classCount[l];
                     majorityClassIndex = l;
-                }
-            }
-
-            if (isTie) {
-                ArrayList<Integer> tieArray = new ArrayList<>();
-
-                for (int o = 0; o < distance.length - 1; o++) {
-                    if (distance[o].getDistance() == distance[o + 1].getDistance()) {
-                        tieArray.add(o, getClassIndex(distance[o].getInstanceClass()));
-                        tieArray.add(o + 1, getClassIndex(distance[o + 1].getInstanceClass()));
-                    } else {
-                        break;
-                    }
-                }
-
-
-                int finalClassIndex = 9999999;
-                for (int o = 0; o < tieArray.size(); o++) {
-                    if (tieArray.get(o) < finalClassIndex) {
-                        finalClassIndex = tieArray.get(o);
-                    }
-                }
-                if (finalClassIndex != 9999999) {
-                    majorityClassIndex = finalClassIndex;
                 }
             }
 

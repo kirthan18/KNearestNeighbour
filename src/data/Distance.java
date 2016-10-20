@@ -8,9 +8,9 @@ public class Distance implements Comparable<Distance>{
     private int mInstanceOrdinal;
     private String mInstanceClass;
 
-    public Distance(double distanceValue, int attributeOrdinal, String instanceClass){
+    public Distance(double distanceValue, int instanceOrdinal, String instanceClass){
         this.mDistance = distanceValue;
-        this.mInstanceOrdinal = attributeOrdinal;
+        this.mInstanceOrdinal = instanceOrdinal;
         this.mInstanceClass = instanceClass;
     }
 

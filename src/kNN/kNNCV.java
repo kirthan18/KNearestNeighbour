@@ -54,6 +54,29 @@ public class kNNCV {
         return distance;
     }
 
+    private static Distance[] computeEuclideanDistance2(ArrayList<ARFFContinuousInstance> instance,
+                                                       ArrayList<ArrayList<ARFFContinuousInstance>> trainSetData,
+                                                        int testInstanceIndex) {
+        Distance[] distance = new Distance[trainSetData.size()];
+
+        for(int i = 0; i < trainSetData.size(); i++) {
+            if(i == testInstanceIndex) {
+                distance[i] = new Distance(99999, i, "");
+            } else {
+                double sumOfSquares = 0.0;
+                ArrayList<ARFFContinuousInstance> trainInstance = trainSetData.get(i);
+                for (int j = 0; j < instance.size(); j++) {
+                    sumOfSquares += Math.pow((instance.get(j).mInstanceValue - trainInstance.get(j).mInstanceValue), 2);
+                }
+                distance[i] = new Distance(Math.sqrt(sumOfSquares), i,
+                        mTrainSetArffReader
+                                .getDataInstanceList()
+                                .get(i)[mTrainSetArffReader.getDataInstanceList().get(i).length - 1]);
+            }
+        }
+        return distance;
+    }
+
     private static ArrayList<ArrayList<ARFFContinuousInstance>> constructInstanceData(ARFFReader reader) {
         ArrayList<ArrayList<ARFFContinuousInstance>> instanceList = new ArrayList<>();
 
@@ -80,11 +103,42 @@ public class kNNCV {
         // Check if the prediction equals actual class
         // If equal, no error; else increment error.
 
-        for(int i = 107; i < trainSetData.size(); i++) {
+        for(int i = 0; i < trainSetData.size(); i++) {
             ArrayList<ARFFContinuousInstance> testInstance = trainSetData.get(i);
-            trainSetData.remove(i);
-            Distance[] distances = computeEuclideanDistance(testInstance, trainSetData);
+            //trainSetData.remove(i);
+            Distance[] distances = computeEuclideanDistance2(testInstance, trainSetData, i);
             Arrays.sort(distances);
+
+            int startIndex = 0;
+            int endIndex = 0;
+            int x = 1;
+            double prevDistance = distances[0].getDistance();
+
+            while(x < distances.length) {
+                if (distances[x].getDistance() == prevDistance) {
+                    endIndex = x;
+                    x++;
+                } else {
+                    if(startIndex < endIndex) {
+                        //System.out.println("i = " + i + " Start index : " + startIndex + " End index = " + endIndex);
+                        Arrays.sort(distances, startIndex, endIndex, (o1, o2) -> {
+                            if (o1.getInstanceOrdinal() < o2.getInstanceOrdinal()) {
+                                return -1;
+                            } else if (o1.getInstanceOrdinal() > o2.getInstanceOrdinal()) {
+                                return 1;
+                            } else {
+                                return 0;
+                            }
+                        });
+
+                    }
+                    endIndex = x;
+                    startIndex = x;
+                    prevDistance = distances[x].getDistance();
+                    x++;
+                }
+
+            }
 
             //Find k nearest neighbours' class
             int[] classCount = new int[mTrainSetArffReader.getARFFClass().mNoOfClasses];
@@ -93,55 +147,19 @@ public class kNNCV {
                     if (distances[j].getInstanceClass()
                             .equalsIgnoreCase(mTrainSetArffReader.getARFFClass().mClassLabels[l])) {
                         classCount[l]++;
+                        break;
                     }
                 }
             }
 
             //Classify based on majority class
-            String nearestNeighbourClass = distances[0].getInstanceClass();
             int majorityClassIndex = -1;
             int max = -1;
-            boolean isTie = false;
 
             for(int l = 0; l < classCount.length; l++) {
-                if(classCount[l] == max) {
-                    isTie = true;
-                    if(mTrainSetArffReader.getARFFClass().mClassLabels[l].equalsIgnoreCase(nearestNeighbourClass)) {
-                        max = classCount[l];
-                        majorityClassIndex = l;
-                    } else {
-                        //This class doesn't contain the nearest neighbour.
-                        //So proceed to find the other majority classes if they exist.
-                    }
-                }
                 if(classCount[l] > max) {
-                    isTie = false;
                     max = classCount[l];
                     majorityClassIndex = l;
-                }
-            }
-
-            if (isTie) {
-                ArrayList<Integer> tieArray = new ArrayList<>();
-
-                for (int o = 0; o < distances.length - 1; o++) {
-                    if (distances[o].getDistance() == distances[o + 1].getDistance()) {
-                        tieArray.add(o, getClassIndex(distances[o].getInstanceClass()));
-                        tieArray.add(o + 1, getClassIndex(distances[o + 1].getInstanceClass()));
-                    } else {
-                        break;
-                    }
-                }
-
-
-                int finalClassIndex = 9999999;
-                for (int o = 0; o < tieArray.size(); o++) {
-                    if (tieArray.get(o) < finalClassIndex) {
-                        finalClassIndex = tieArray.get(o);
-                    }
-                }
-                if (finalClassIndex != 9999999) {
-                    majorityClassIndex = finalClassIndex;
                 }
             }
 
@@ -149,10 +167,15 @@ public class kNNCV {
             String actualClass = mTrainSetArffReader.getDataInstanceList()
                         .get(i)[mTrainSetArffReader.getDataInstanceList().get(i).length - 1];
 
+            /*if(k == 3) {
+                System.out.println("Predicted class : " + majorityClassIndex + "\tActual class : " + getClassIndex(actualClass));
+            }*/
+
+            //if(actualClass != predictedClass) {
             if(!Objects.equals(predictedClass, actualClass)) {
                 error++;
             }
-            trainSetData.add(i, testInstance);
+            //trainSetData.add(i, testInstance);
         }
         return error;
 
@@ -198,8 +221,8 @@ public class kNNCV {
 
         for(int i = 0; i < trainSetData.size(); i++) {
             ArrayList<ARFFContinuousInstance> testInstance = trainSetData.get(i);
-            trainSetData.remove(i);
-            Distance[] distances = computeEuclideanDistance(testInstance, trainSetData);
+            //trainSetData.remove(i);
+            Distance[] distances = computeEuclideanDistance2(testInstance, trainSetData, i);
             Arrays.sort(distances);
 
             double predictedValue = 0.0;
@@ -213,7 +236,7 @@ public class kNNCV {
             actualValue = Double.parseDouble(mTrainSetArffReader.getDataInstanceList()
                     .get(i)[mTrainSetArffReader.getDataInstanceList().get(i).length - 1]);
             meanAbsoluteError += Math.abs(predictedValue - actualValue);
-            trainSetData.add(i, testInstance);
+            //trainSetData.add(i, testInstance);
         }
         return meanAbsoluteError/(double)trainSetData.size();
 
@@ -254,6 +277,37 @@ public class kNNCV {
             //sort based on distance measure
             Arrays.sort(distance);
 
+            int startIndex = 0;
+            int endIndex = 0;
+            int x = 1;
+            double prevDistance = distance[0].getDistance();
+
+            while(x < distance.length) {
+                if (distance[x].getDistance() == prevDistance) {
+                    endIndex = x;
+                    x++;
+                } else {
+                    if(startIndex < endIndex) {
+                        //System.out.println("i = " + i + " Start index : " + startIndex + " End index = " + endIndex);
+                        Arrays.sort(distance, startIndex, endIndex, (o1, o2) -> {
+                            if (o1.getInstanceOrdinal() < o2.getInstanceOrdinal()) {
+                                return -1;
+                            } else if (o1.getInstanceOrdinal() > o2.getInstanceOrdinal()) {
+                                return 1;
+                            } else {
+                                return 0;
+                            }
+                        });
+
+                    }
+                    endIndex = x;
+                    startIndex = x;
+                    prevDistance = distance[x].getDistance();
+                    x++;
+                }
+
+            }
+
             //Find k nearest neighbours' class
             int[] classCount = new int[mTrainSetArffReader.getARFFClass().mNoOfClasses];
             for(int j = 0; j < bestK; j++) {
@@ -266,54 +320,15 @@ public class kNNCV {
             }
 
             //Classify based on majority class
-            String nearestNeighbourClass = distance[0].getInstanceClass();
             int majorityClassIndex = -1;
             int max = -1;
-            boolean isTie = false;
 
             for(int l = 0; l < classCount.length; l++) {
-                if(classCount[l] == max) {
-                    isTie = true;
-                    if(mTrainSetArffReader.getARFFClass().mClassLabels[l].equalsIgnoreCase(nearestNeighbourClass)) {
-                        max = classCount[l];
-                        majorityClassIndex = l;
-                    } else {
-                        //This class doesn't contain the nearest neighbour.
-                        //So proceed to find the other majority classes if they exist.
-                    }
-                }
                 if(classCount[l] > max) {
-                    isTie = false;
                     max = classCount[l];
                     majorityClassIndex = l;
                 }
             }
-
-            if (isTie) {
-                ArrayList<Integer> tieArray = new ArrayList<>();
-
-                for (int o = 0; o < distance.length - 1; o++) {
-                    if (distance[o].getDistance() == distance[o + 1].getDistance()) {
-                        tieArray.add(o, getClassIndex(distance[o].getInstanceClass()));
-                        tieArray.add(o + 1, getClassIndex(distance[o + 1].getInstanceClass()));
-                    } else {
-                        break;
-                    }
-                }
-
-
-                int finalClassIndex = 9999999;
-                for (int o = 0; o < tieArray.size(); o++) {
-                    if (tieArray.get(o) < finalClassIndex) {
-                        finalClassIndex = tieArray.get(o);
-                    }
-                }
-                if (finalClassIndex != 9999999) {
-                    majorityClassIndex = finalClassIndex;
-                }
-            }
-
-
 
             String predictedClass = mTestSetArffReader.getARFFClass().mClassLabels[majorityClassIndex];
             String actualClass = mTestSetArffReader.getDataInstanceList()
